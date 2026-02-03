@@ -1,17 +1,9 @@
 from pathlib import Path
-from typing import List, Literal, Tuple
+
+from typing import List, Tuple
 import pymupdf
-from pymupdf import Document, Page, Rect, Point
-from enum import Enum
-
-AnchorPos = Literal["top-left", "top-right", "bottom-right", "bottom-left"]
-
-
-class Anchor(str, Enum):
-    TOP_LEFT = "top-left"
-    TOP_RIGHT = "top-right"
-    BOTTOM_RIGHT = "bottom-right"
-    BOTTOM_LEFT = "bottom-left"
+from pymupdf import Page
+from type import Anchor, AnchorPos
 
 
 class PDFAnnotator:
@@ -21,31 +13,43 @@ class PDFAnnotator:
         anchor: Anchor | AnchorPos = Anchor.BOTTOM_LEFT,
         margin_frac: float = 1 / 10,
         offset: Tuple[int, int] = (10, 10),
+        zoom: float = 2.0,
     ):
         self.pdf = Path(pdf_path).resolve()
         self.anchor = Anchor(anchor)
         self.margin_frac = margin_frac
         self.offset = offset
+        self.zoom = zoom
 
-    def _to_image_bytes(self, zoom: float = 2.0):
+    def _to_image_bytes(self, annotate: bool = True) -> List[bytes]:
         doc = pymupdf.open(self.pdf)
         image_bytes: List[bytes] = []
         for page_num in range(len(doc)):
             page: Page = doc.load_page(page_num)
-            matrix = pymupdf.Matrix(zoom, zoom)
+            if annotate:
+                self._get_draw(page)
+            matrix = pymupdf.Matrix(self.zoom, self.zoom)
             pix = page.get_pixmap(matrix=matrix)
             image_bytes.append(pix.tobytes("png"))
         doc.close()
         return image_bytes
 
-    def _annotate_pages(self):
+    def save_as_images(self, output_path: Path | str, annotate: bool = True) -> None:
+        output_path = Path(output_path).resolve()
+        output_path.mkdir(parents=True, exist_ok=True)
+        for i, img_bytes in enumerate(self._to_image_bytes(annotate)):
+            out_file = output_path / f"{self.pdf.stem}_page_{i + 1}.png"
+            out_file.write_bytes(img_bytes)
+
+    def annotate_pages(self) -> str:
         doc = pymupdf.open(self.pdf)
         for page_num in range(len(doc)):
             page: Page = doc.load_page(page_num)
             self._get_draw(page)
-            pix = page.get_pixmap(dpi=150)
-
-            pix.save("debug_page.png")
+        output_path = self.pdf.with_name(f"{self.pdf.stem}_annotated.pdf")
+        doc.save(output_path)
+        doc.close()
+        return output_path.as_posix()
 
     def _get_draw(
         self,
@@ -120,4 +124,5 @@ class PDFAnnotator:
 
 if __name__ == "__main__":
     path = "src/data/Lecture_02_03.pdf"
-    PDFAnnotator(path, anchor="bottom-left", margin_frac=1 / 20)._annotate_pages()
+    output = Path(r"src\data\images").resolve()
+    PDFAnnotator(path, anchor="bottom-left", margin_frac=1 / 20).save_as_images(output)
