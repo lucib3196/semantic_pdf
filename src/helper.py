@@ -1,5 +1,5 @@
 from pathlib import Path
-from pdf_page_extractor import State
+from graph.graph import State
 import json
 from utils import save_base64_image
 path = Path("output.json").resolve()

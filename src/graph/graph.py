@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from type import PDFInput, PageRange
 from annotator.pdf_annotator import PDFAnnotator
 from pdf_llm.pdf_llm import PDFMultiModalLLM
-from pdf_seperator import PDFSeperator
+from pdf_seperator.pdf_seperator import PDFSeperator
 
 
 load_dotenv()
@@ -54,7 +54,7 @@ model = init_chat_model(model="gpt-4o", model_provider="openai")
 
 class State(BaseModel, Generic[T]):
     # --- Inputs ---
-    pdf: PDFInput
+    pdf: str | Path
     prompt: str
     pdf_images: list[bytes] = []
 
