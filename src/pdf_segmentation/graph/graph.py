@@ -8,13 +8,14 @@ from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
 
-from type import PDFInput, PageRange
-from annotator.pdf_annotator import PDFAnnotator
-from pdf_llm.pdf_llm import PDFMultiModalLLM
-from pdf_seperator.pdf_seperator import PDFSeperator
-from pdf_image_converter import PDFImageConverter
+from pdf_segmentation.types import PageRange
+from pdf_segmentation.annotator import PDFAnnotator
+from pdf_invoke import MultiModalLLM
+from pdf_segmentation.pdf_seperator.pdf_seperator import PDFSeperator
+from pdf_segmentation.utils import to_serializable
 
 load_dotenv()
+model = init_chat_model(model="gpt-4o", model_provider="openai")
 
 
 class Section(BaseModel):
@@ -49,9 +50,6 @@ class ParsedUnit(
         return base64.b64encode(value).decode("ascii")
 
 
-model = init_chat_model(model="gpt-4o", model_provider="openai")
-
-
 class State(BaseModel, Generic[T]):
     # --- Inputs ---
     pdf: str | Path
@@ -78,12 +76,11 @@ def prepare_pdf(state: State):
 
 
 def get_sections(state: State):
-    llm = PDFMultiModalLLM(
+    llm = MultiModalLLM(
         prompt=state.prompt,
-        pdf=state.pdf_bytes,
         model=model,
     )
-    result = llm.invoke(state.output_schema)
+    result = llm.invoke(pdf=state.pdf_bytes, output_model=state.output_schema)
     result = state.output_schema.model_validate(result)
     return {"raw_output": result.items}
 
@@ -100,8 +97,8 @@ def seperate_pages(state: State[T]):
         cleaned = ParsedUnit[T](
             data=unit,
             pdf_bytes=separator.extract_page_range(
-                start=page_range.start_page - 1,
-                end=page_range.end_page - 1,
+                start=page_range.start_page,
+                end=page_range.end_page,
             ),
         )
         parsed.append(cleaned)
@@ -169,7 +166,6 @@ Important constraints:
         )
     )
     result = State.model_validate(result)
-    from utils import to_serializable
     import json
 
     output = Path("output.json").resolve()

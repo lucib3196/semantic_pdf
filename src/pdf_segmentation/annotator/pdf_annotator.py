@@ -1,11 +1,13 @@
 from pathlib import Path
 from typing import Literal, Optional, Tuple
 
+
 import pymupdf
 from pymupdf import Page
 
-from pdf_image_converter import PDFImageConverter
-from type import Anchor, AnchorPos
+
+from pdf_invoke.converter import PDFImageConverter
+from pdf_segmentation.types import Anchor, AnchorPos
 
 
 class PDFAnnotator:
@@ -40,20 +42,23 @@ class PDFAnnotator:
 
     def _annotate_and_save(
         self,
+        name: str,
+        output_path: str | Path,
         method: Literal["pdf", "image"] = "image",
-        output_path: Optional[str | Path] = None,
     ) -> str:
         data = self.annotate_and_render_pages()
-        output_path = self.get_output_path(path, method)
-        if method == "pdf":
-            if not isinstance(data, (bytes, bytearray)):
-                raise ValueError("Expected PDF data to be bytes")
-            output_path.write_bytes(data)
-            return output_path.as_posix()
-        elif method == "image":
-            PDFImageConverter().save_to_images(
-                data, output_path, pdf_name=self.pdf.stem
-            )
+        converter = PDFImageConverter()
+        output_path = Path(output_path)
+        if method == "image":
+            converter.save_pdf_to_images(data, output_path=output_path, pdf_name=name)
+        elif method == "pdf":
+            filepath = output / name
+            if filepath.suffix.lower() != ".pdf":
+                filepath = filepath.with_suffix(".pdf")
+            filepath.write_bytes(data)
+            return filepath.as_posix()
+        else:
+            raise TypeError(f"Method {method} is not valid for annotating")
         return output_path.as_posix()
 
     def _annotate_page(
@@ -122,29 +127,15 @@ class PDFAnnotator:
                 raise ValueError(f"Invalid anchor: {anchor}")
         return cx, cy
 
-    def get_output_path(
-        self,
-        path: Optional[str | Path] = None,
-        method: Literal["image", "pdf"] = "image",
-    ) -> Path:
-        if path:
-            return Path(path).resolve()
-        if method == "pdf":
-            output_path = self.pdf.with_name(f"{self.pdf.stem}_annotated.pdf")
-        elif method == "image":
-            output_path = self.pdf.with_name(f"{self.pdf.stem}_annotated_pages")
-            output_path.mkdir(parents=True, exist_ok=True)
-
-        return output_path
-
     def _validate(self):
         if not self.pdf.exists():
             raise FileNotFoundError(f"PDF Path {self.pdf} does not exist")
 
 
 if __name__ == "__main__":
-    path = "data/Lecture_02_03.pdf"
-    output = Path(r"src\data\images").resolve()
+    path = Path("data/Lecture_02_03.pdf")
+    output = Path(r"data\images").resolve()
+    name = path.stem + "_test"
     PDFAnnotator(path, anchor="bottom-left", margin_frac=1 / 20)._annotate_and_save(
-        method="image"
+        method="pdf", output_path=output, name=name
     )

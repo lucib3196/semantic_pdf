@@ -1,8 +1,8 @@
 from pathlib import Path
 import pymupdf
-from type import PDFInput
-from typing import Sequence, Literal
-from pdf_image_converter import PDFImageConverter
+from pdf_invoke.types import PDFInput
+from typing import Sequence
+from pdf_invoke import PDFImageConverter
 
 
 class PDFSeperator:
@@ -42,20 +42,20 @@ class PDFSeperator:
         start: int,
         end: int,
         output_dir: str | Path,
-        pdf_name: str,
-        method: Literal["pdf", "image"] = "pdf",
     ) -> str:
         output_dir = Path(output_dir).resolve()
         if not output_dir.exists():
             raise ValueError("Failed to extract pdf path {output_dir} does not exist")
         data = self.extract_page_range(start, end)
         output_path = output_dir / (f"{self.pdf_name}_extracted_{start}_{end}.pdf")
-        PDFImageConverter().save_to_images(data, output_dir, pdf_name)
+        output_path.write_bytes(data)
         return output_path.as_posix()
 
 
 if __name__ == "__main__":
     path = r"data\Lecture_02_03.pdf"
     PDFSeperator(path)._extract_and_save(
-        1, 3, output_dir="./data", pdf_name="pdf_extracted"
+        1,
+        5,
+        output_dir="./data",
     )

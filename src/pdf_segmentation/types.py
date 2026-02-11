@@ -1,11 +1,10 @@
 from pathlib import Path
 from typing import Literal
 from enum import Enum
-
+from pydantic import BaseModel
 
 AnchorPos = Literal["top-left", "top-right", "bottom-right", "bottom-left"]
 ImageExt = Literal["png", "jpeg"]
-
 
 class Anchor(str, Enum):
     TOP_LEFT = "top-left"
@@ -18,3 +17,12 @@ PDFInput = str | Path | bytes
 ImageBytes = bytes
 
 ImageInput = PDFInput | ImageBytes
+
+
+class BaseOutput(BaseModel):
+    data: str
+
+
+class PageRange(BaseModel):
+    start_page: int
+    end_page: int
