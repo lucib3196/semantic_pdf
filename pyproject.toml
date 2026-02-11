@@ -1,5 +1,5 @@
 [project]
-name = "src"
+name = "pdf_segmentation"
 version = "0.1.0"
 description = ""
 authors = [
@@ -24,3 +24,4 @@ dev = [
     "langchain-openai (>=1.1.7,<2.0.0)",
     "ipykernel (>=7.2.0,<8.0.0)"
 ]
+
