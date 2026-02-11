@@ -9,7 +9,7 @@ class PDFSeperator:
     def __init__(
         self,
         pdf_path: PDFInput | None = None,
-        pdf_bytes: Sequence[bytes] | None = None,
+        pdf_bytes: bytes | None = None,
         image_bytes: Sequence[bytes] | None = None,
         pdf_name: str | None = "input_pdf",
     ):

@@ -12,7 +12,7 @@ from type import PDFInput, PageRange
 from annotator.pdf_annotator import PDFAnnotator
 from pdf_llm.pdf_llm import PDFMultiModalLLM
 from pdf_seperator.pdf_seperator import PDFSeperator
-
+from pdf_image_converter import PDFImageConverter
 
 load_dotenv()
 
@@ -56,7 +56,7 @@ class State(BaseModel, Generic[T]):
     # --- Inputs ---
     pdf: str | Path
     prompt: str
-    pdf_images: list[bytes] = []
+    pdf_bytes: bytes | None = None
 
     # --- Schema configuration ---
     output_schema: Type[ListOutput[T]] = Field(exclude=True)
@@ -64,24 +64,23 @@ class State(BaseModel, Generic[T]):
 
     parsed: list[ParsedUnit[T]] = Field(default_factory=list, exclude=False)
 
-    @field_serializer("pdf_images")
-    def serialize_pdf_bytes(self, value: list[bytes]):
-
-        return [base64.b64encode(b).decode("ascii") for b in value]
+    @field_serializer("pdf_bytes")
+    def serialize_pdf_bytes(self, value: bytes):
+        return base64.b64encode(value).decode("ascii")
 
 
 def prepare_pdf(state: State):
     state.pdf = Path(state.pdf)
     if not state.pdf.exists():
         raise ValueError("PDF path cannot be resolved")
-    pdf_images = PDFAnnotator(state.pdf).annotate_and_render_pages()
-    return {"pdf_images": pdf_images}
+    pdf = PDFAnnotator(state.pdf).annotate_and_render_pages()
+    return {"pdf_bytes": pdf}
 
 
 def get_sections(state: State):
     llm = PDFMultiModalLLM(
         prompt=state.prompt,
-        image_bytes=state.pdf_images,
+        pdf=state.pdf_bytes,
         model=model,
     )
     result = llm.invoke(state.output_schema)
@@ -91,7 +90,9 @@ def get_sections(state: State):
 
 def seperate_pages(state: State[T]):
     parsed = []
-    separator = PDFSeperator(image_bytes=state.pdf_images)
+    if not state.pdf_bytes:
+        raise ValueError("PDF bytes is None")
+    separator = PDFSeperator(pdf_bytes=state.pdf_bytes)
     for unit in state.raw_output:
         page_range = getattr(unit, "page_range", None)
         if page_range is None:
@@ -121,10 +122,12 @@ graph = graph.compile()
 
 if __name__ == "__main__":
     path = "data/Lecture_02_03.pdf"
+    from typing import Literal
 
     class MySection(Section, BaseModel):
         title: str
         description: str
+        section_type: Literal["derivation", "question"]
 
     class MySections(ListOutput[MySection]):
         items: List[MySection]
@@ -133,10 +136,36 @@ if __name__ == "__main__":
         State(
             output_schema=MySections,
             pdf=path,
-            prompt="""You are tasked with analyzing the provided lecture material.
-Identify and extract all sections that contain mathematical derivations.
-Each derivation must be clearly separated into its own section and include the start and end page (or location) where the derivation appears.
-Only include content that is part of a derivation; do not summarize or explain beyond what is explicitly shown. For the page range, the lecture is annotated with a page number circled on the bottom left corner use this as the primary indexing of the pages""",
+            prompt="""You are analyzing a set of lecture notes.
+
+Your task is to identify and extract distinct sections that fall into ONE of the following two categories only:
+
+1. **Derivation**
+   - A derivation is a mathematical development that proceeds step-by-step using equations, formulas, algebra, calculus, or symbolic manipulation.
+   - It typically starts from assumptions, definitions, or governing equations and arrives at a derived result.
+   - Only include content that is explicitly part of the mathematical derivation.
+   - Do NOT explain, summarize, or add interpretation beyond what is written.
+
+2. **Question**
+   - A question is a clearly defined problem or practice exercise posed to the reader.
+   - It may begin with phrases such as “Find”, “Determine”, “Calculate”, “Show that”, or be labeled as an example, problem, or practice question.
+   - Only include the question statement itself.
+   - Do NOT include solution steps unless they are explicitly written as part of the question.
+
+For each identified section:
+- Create a separate section entry.
+- Assign the appropriate `section_type` (`"derivation"` or `"question"`).
+- Use the section’s visible heading or a concise descriptive title.
+- Provide a short description that closely reflects the original content without adding new information.
+
+Page indexing:
+- The lecture pages are annotated with a circled page number in the bottom-left corner.
+- Use this circled page number as the authoritative reference when determining where a section begins and ends.
+
+Important constraints:
+- Do not merge multiple derivations or questions into a single section.
+- Do not invent structure that is not present in the lecture.
+- If content is ambiguous, only include it if it clearly fits one of the two categories.""",
         )
     )
     result = State.model_validate(result)

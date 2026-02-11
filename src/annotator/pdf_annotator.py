@@ -28,7 +28,6 @@ class PDFAnnotator:
         self,
     ) -> bytes:
         doc = pymupdf.open(self.pdf)
-
         try:
             # Annotate all pages
             for page in doc:

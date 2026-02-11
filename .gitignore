@@ -94,3 +94,4 @@ temp/
 # PyMuPDF / cache (optional)
 # ------------------------------
 *.pymupdf
+src\Untitled-1.ipynb

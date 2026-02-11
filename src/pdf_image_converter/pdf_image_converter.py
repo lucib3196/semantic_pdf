@@ -8,10 +8,18 @@ class PDFImageConverter:
     def convert_to_images(
         self, pdf: PDFInput, zoom: float = 0.2, ext: ImageExt = "png"
     ) -> List[bytes]:
-        if isinstance(PDFInput, (bytes, bytearray, memoryview)):
-            doc = pymupdf.open(stream=PDFInput, filetype="pdf")
-        else:
-            doc = pymupdf.open(pdf)
+
+        try:
+            doc = None
+            if isinstance(pdf, (bytes, bytearray, memoryview)):
+                doc = pymupdf.open(stream=pdf, filetype="pdf")
+            elif isinstance(pdf, (Path, str)):
+                doc = pymupdf.open(Path(pdf).as_posix())
+            else:
+                raise TypeError("PDF is not of expected type")
+            assert doc
+        except Exception as e:
+            raise ValueError(f"Failed to open document {e}")
         matrix = pymupdf.Matrix(zoom, zoom)
         image_bytes = [page.get_pixmap(matrix=matrix).tobytes(ext) for page in doc]
         doc.close()

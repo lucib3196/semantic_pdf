@@ -16,45 +16,51 @@ class PDFMultiModalLLM:
         *,
         prompt: str,
         model: BaseChatModel,
-        pdf_path: PDFInput | None = None,
+        pdf: PDFInput | None = None,
         image_bytes: Sequence[bytes] | None = None,
     ):
-        if pdf_path is None and image_bytes is None:
+        if pdf is None and image_bytes is None:
             raise ValueError("Either pdf_path or image_bytes must be provided")
-        if pdf_path is not None and image_bytes is not None:
+        if pdf is not None and image_bytes is not None:
             raise ValueError("Provide only one of pdf_path or image_bytes")
 
         self.prompt = prompt
         self.builder = ImagePayloadBuilder()
         self.llm = model
 
-        if pdf_path is not None:
-            self.pdf_bytes = PDFImageConverter().convert_to_images(pdf_path)
+        if pdf is not None:
+            self.pdf_bytes = PDFImageConverter().convert_to_images(pdf)
+
         elif image_bytes:
             self.pdf_bytes = list(image_bytes)
         else:
-            raise ValueError("Unexpected Error Occured")
+            raise RuntimeError("Unexpected Error Occured ")
 
-    def prepare_payload(
-        self,
-    ):
-        image_payload = self.builder.prepare_llm_payload(self.pdf_bytes)
-        message = {
-            "role": "user",
-            "content": [{"type": "text", "text": self.prompt}, *image_payload],
-        }
-        return message
+    def prepare_payload(self, mime="image/png"):
+        try:
+            image_payload = self.builder.prepare_llm_payload(self.pdf_bytes, mime=mime)
+            message = {
+                "role": "user",
+                "content": [{"type": "text", "text": self.prompt}, *image_payload],
+            }
+            return message
+        except Exception as e:
+            raise RuntimeError(f"Failed to prepare payload for LLM. Error:  {e}")
 
     def invoke(
         self,
         output_model: Optional[Type[BaseModel]] = BaseOutput,
+        mime: str = "image/png",
     ):
-        message = self.prepare_payload()
-        if output_model:
-            chain = self.llm.with_structured_output(schema=output_model)
-            return chain.invoke([message])
-        else:
-            return self.llm.invoke([message])
+        try:
+            message = self.prepare_payload(mime)
+            if output_model:
+                chain = self.llm.with_structured_output(schema=output_model)
+                return chain.invoke([message])
+            else:
+                return self.llm.invoke([message])
+        except Exception as e:
+            raise RuntimeError(f"Failed to invoke model {e}")
 
     async def ainvoke(
         self,
@@ -78,6 +84,6 @@ if __name__ == "__main__":
     output = Path(r"src\data\images").resolve()
     model = init_chat_model(model="gpt-4o", model_provider="openai")
     data = PDFMultiModalLLM(
-        prompt="What is in the image", pdf_path=path, model=model
+        prompt="What is in the image", pdf=path, model=model
     ).invoke()
     print(data)

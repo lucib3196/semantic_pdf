@@ -1,14 +1,15 @@
 from pathlib import Path
 import base64
 from typing import Sequence, List
-from type import ImageInput
+from type import PDFInput
 
 
 class ImagePayloadBuilder:
     @staticmethod
-    def _to_bytes(data: ImageInput) -> bytes:
+    def _to_bytes(data: PDFInput) -> bytes:
         if isinstance(data, (bytes, bytearray, memoryview)):
             return bytes(data)
+
         path = Path(data)
         if not path.exists():
             raise FileNotFoundError(f"Image path not found: {path}")
@@ -21,7 +22,7 @@ class ImagePayloadBuilder:
     @classmethod
     def prepare_llm_payload(
         cls,
-        payload: Sequence[ImageInput],
+        payload: Sequence[PDFInput],
         mime: str = "image/jpeg",
     ) -> List[dict[str, str | dict[str, str]]]:
         payload = [cls._to_bytes(p) for p in payload]
