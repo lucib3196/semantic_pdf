@@ -1,7 +1,7 @@
 [project]
 name = "pdf_segmentation"
 version = "1.1.0"
-description = ""
+description = "Using langraph to parse a pdf into semenatic chunks "
 authors = [
     {name = "Luciano Bermudez",email = "lucianobmecheng69@gmail.com"}
 ]
@@ -13,9 +13,16 @@ dependencies = [
     "langgraph (>=1.0.7,<2.0.0)",
     "python-dotenv (>=1.2.1,<2.0.0)"
 ]
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+
+
+
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
 
 [dependency-groups]
 dev = [
