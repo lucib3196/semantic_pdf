@@ -7,7 +7,7 @@ from pydantic import BaseModel, field_serializer, Field
 from langgraph.graph import StateGraph, START, END
 from langchain.chat_models import init_chat_model
 from dotenv import load_dotenv
-
+from langchain.chat_models import BaseChatModel
 from pdf_segmentation.types import PageRange
 from pdf_segmentation.annotator import PDFAnnotator
 from pdf_invoke import MultiModalLLM
@@ -15,7 +15,6 @@ from pdf_segmentation.pdf_seperator.pdf_seperator import PDFSeperator
 from pdf_segmentation.utils import to_serializable
 
 load_dotenv()
-model = init_chat_model(model="gpt-4o", model_provider="openai")
 
 
 class Section(BaseModel):
@@ -62,6 +61,10 @@ class State(BaseModel, Generic[T]):
 
     parsed: list[ParsedUnit[T]] = Field(default_factory=list, exclude=False)
 
+    llm: BaseChatModel = Field(
+        default_factory=lambda: init_chat_model(model="gpt-4o", model_provider="openai")
+    )
+
     @field_serializer("pdf_bytes")
     def serialize_pdf_bytes(self, value: bytes):
         return base64.b64encode(value).decode("ascii")
@@ -78,7 +81,7 @@ def prepare_pdf(state: State):
 def get_sections(state: State):
     llm = MultiModalLLM(
         prompt=state.prompt,
-        model=model,
+        model=state.llm,
     )
     result = llm.invoke(pdf=state.pdf_bytes, output_model=state.output_schema)
     result = state.output_schema.model_validate(result)

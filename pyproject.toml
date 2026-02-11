@@ -1,5 +1,5 @@
 [project]
-name = "pdf_segmentation"
+name = "pdf-segmentation"
 version = "1.1.1"
 description = "Using langraph to parse a pdf into semenatic chunks "
 authors = [

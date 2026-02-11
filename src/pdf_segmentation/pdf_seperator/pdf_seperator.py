@@ -1,8 +1,8 @@
 from pathlib import Path
 import pymupdf
-from pdf_invoke.types import PDFInput
 from typing import Sequence
 from pdf_invoke import PDFImageConverter
+from pdf_invoke.types import PDFInput
 
 
 class PDFSeperator:
