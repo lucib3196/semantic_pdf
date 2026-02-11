@@ -1,6 +1,6 @@
 [project]
 name = "pdf-segmentation"
-version = "1.1.1"
+version = "2.0.0"
 description = "Using langraph to parse a pdf into semenatic chunks "
 authors = [
     {name = "Luciano Bermudez",email = "lucianobmecheng69@gmail.com"}
@@ -13,7 +13,7 @@ dependencies = [
     "langgraph (>=1.0.7,<2.0.0)",
     "python-dotenv (>=1.2.1,<2.0.0)",
     "pydantic (>=2.12.5,<3.0.0)",
-    "pdf-invoke (>=0.1.2,<0.2.0)",
+    "pdf-invoke (>=0.2.0,<0.3.0)",
 ]
 license = "MIT"
 license-files = ["LICEN[CS]E*"]
