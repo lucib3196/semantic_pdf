@@ -1178,14 +1178,14 @@ testing = ["docopt", "pytest"]
 
 [[package]]
 name = "pdf-invoke"
-version = "0.2.0"
+version = "0.2.1"
 description = "A LLM utility for working with pdfs"
 optional = false
 python-versions = "<4.0.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "pdf_invoke-0.2.0-py3-none-any.whl", hash = "sha256:b386a31f51f2643db2029401acae62a8187fef20e6da6abe58ea318c80761288"},
-    {file = "pdf_invoke-0.2.0.tar.gz", hash = "sha256:e1b47bebe40085dcb99275897b9622e4e36b3e920af240f6730b2cf2ed0f680a"},
+    {file = "pdf_invoke-0.2.1-py3-none-any.whl", hash = "sha256:d59b00085b4a9479123f1651fdd11a8eb964b1b6ce434117f19b11bf69c61644"},
+    {file = "pdf_invoke-0.2.1.tar.gz", hash = "sha256:9de33b73eefc76a0d0b87b89e3e4a57cf216b0b8e6c739d1bf5a4838bd5ed97e"},
 ]
 
 [package.dependencies]
@@ -2560,4 +2560,4 @@ cffi = ["cffi (>=1.17,<2.0) ; platform_python_implementation != \"PyPy\" and pyt
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0.0"
-content-hash = "af6ad17cfd728cbd663aa54f84f2459186b4901be9b7bd4c3d5d71ac4dc40d92"
+content-hash = "d9a715a15072def0aff9472fb96c4be42973a2be80b873317658a0bbb24a5408"
